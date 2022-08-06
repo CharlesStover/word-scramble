@@ -1,0 +1,292 @@
+name: Word Scramble
+
+jobs:
+  install-cypress:
+    name: Install Cypress
+    runs-on: ${{ matrix.os }}-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Install Cypress
+        uses: cypress-io/github-action@v2
+        with:
+          runTests: false
+    strategy:
+      matrix:
+        os: [ubuntu, windows]
+
+  install-yarn:
+    name: Install Yarn
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          cache: yarn
+          check-latest: true
+          node-version: 'lts/*'
+      - name: Install dependencies
+        run: yarn install --immutable
+
+  build:
+    name: Build
+    needs: install-yarn
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          cache: yarn
+          check-latest: true
+          node-version: 'lts/*'
+      - name: Install dependencies
+        run: yarn install --immutable
+      - name: Build
+        run: yarn word-scramble:build
+        env:
+          REACT_APP_VERSION: ${{ github.sha }}
+      - name: Upload build
+        uses: actions/upload-artifact@v2
+        with:
+          name: word-scramble--build
+          path: packages/word-scramble/build
+
+  cypress:
+    name: Cypress
+    needs: [install-cypress, install-yarn]
+    runs-on: ${{ matrix.os }}-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          cache: yarn
+          check-latest: true
+          node-version: 'lts/*'
+      - name: End-to-end test
+        uses: cypress-io/github-action@v2
+        env:
+          CHOKIDAR_USEPOLLING: true
+          CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NYC_REPORT_DIR: cypress/coverage/${{ matrix.os }}-${{ matrix.browser }}-${{ matrix.container }}
+          REACT_APP_VERSION: ${{ github.sha }}
+        with:
+          browser: ${{ matrix.browser }}
+          ci-build-id: ${{ github.run_id }}-${{ github.run_attempt }}
+          command-prefix: yarn dlx
+          config-file: cypress.config.mjs
+          group: ${{ matrix.os }}-${{ matrix.browser }}
+          parallel: true
+          project: packages/word-scramble
+          record: true
+          start: yarn word-scramble:cypress:start
+          tag: ${{ github.event_name }}
+          wait-on: 'http://localhost:3000/'
+          wait-on-timeout: 120
+      - name: Upload coverage
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: word-scramble--cypress--coverage
+          path: packages/word-scramble/cypress/coverage
+      - name: Upload screenshots
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: word-scramble--cypress--screenshots
+          path: packages/word-scramble/cypress/screenshots
+      - name: Upload videos
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: word-scramble--cypress--videos
+          path: packages/word-scramble/cypress/videos
+    strategy:
+      fail-fast: false
+      matrix:
+        # Windows is disabled until `cypress-io/github-action` supports it.
+        # https://github.com/cypress-io/github-action/pull/470
+        os: [ubuntu] # , windows
+        browser: [chrome, edge, firefox]
+        container: [1]
+        exclude:
+          - browser: edge
+            os: ubuntu
+
+  eslint:
+    name: ESLint
+    needs: install-yarn
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          cache: yarn
+          check-latest: true
+          node-version: 'lts/*'
+      - name: Install dependencies
+        run: yarn install --immutable
+      - name: Lint
+        run: yarn word-scramble:eslint
+
+  jest:
+    name: Jest
+    needs: install-yarn
+    runs-on: ubuntu-latest
+    # services:
+    #   datadog-agent:
+    #     image: datadog/agent:latest
+    #     env:
+    #       DD_API_KEY: ${{ secrets.DATADOG_API_KEY }}
+    #       DD_HOSTNAME: none
+    #       DD_INSIDE_CI: true
+    #     ports:
+    #       - 8126:8126
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          cache: yarn
+          check-latest: true
+          node-version: 'lts/*'
+      - name: Install dependencies
+        run: yarn install --immutable
+      - name: Unit test
+        run: yarn word-scramble:jest
+        env:
+          DD_ENV: ci
+      - name: Upload coverage
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: word-scramble--jest--coverage
+          path: packages/word-scramble/jest/coverage
+
+  coverage:
+    name: Coverage
+    # Disabled until Cypress 10 supports coverage reporting.
+    if: ${{ !always() }}
+    needs: [cypress, jest]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          cache: yarn
+          check-latest: true
+          node-version: 'lts/*'
+      - name: Install dependencies
+        run: yarn install --immutable
+      - name: Download Cypress coverage
+        uses: actions/download-artifact@v2
+        with:
+          name: word-scramble--cypress--coverage
+          path: packages/word-scramble/cypress/coverage
+      - name: Download Jest coverage
+        uses: actions/download-artifact@v2
+        with:
+          name: word-scramble--jest--coverage
+          path: packages/word-scramble/jest/coverage
+      - name: Report coverage
+        run: yarn word-scramble:coverage
+      - name: Upload coverage
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: word-scramble--coverage
+          path: |
+            packages/word-scramble/.nyc_output
+            packages/word-scramble/coverage
+
+  github-pages:
+    name: GitHub Pages
+    if: ${{ github.event_name == 'push' }}
+    needs: [build, coverage, cypress, eslint, jest]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Download build
+        uses: actions/download-artifact@v2
+        with:
+          name: word-scramble--build
+          path: build
+      - name: Deploy GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@4.1.5
+        with:
+          branch: gh-pages
+          clean: true
+          folder: build
+          single-commit: true
+
+  sentry-release:
+    name: Sentry release
+    if: ${{ github.event_name == 'push' }}
+    needs: [build, coverage, cypress, eslint, jest]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Download build
+        uses: actions/download-artifact@v2
+        with:
+          name: word-scramble--build
+          path: packages/word-scramble/build
+      - name: Sentry release
+        uses: getsentry/action-release@v1
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_LOG_LEVEL: info
+          SENTRY_ORG: charles-stover
+          SENTRY_PROJECT: monorepo-template-application
+        with:
+          environment: production
+          sourcemaps: packages/word-scramble/build
+          url_prefix: ~/
+          version: ${{ github.sha }}
+
+  # cloudflare-purge:
+  #   name: Cloudflare purge
+  #   if: ${{ github.event_name == 'push' }}
+  #   needs: github-pages
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Purge Cloudflare cache
+  #       env:
+  #         CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+  #         CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+  #       run: >
+  #         curl \
+  #           --data '{
+  #             "files": [
+  #               "https://charlesstover.com",
+  #               "https://charlesstover.com/index.html"
+  #             ]
+  #           }' \
+  #           --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+  #           --header "Content-Type:application/json" \
+  #           --request POST \
+  #           "https://api.cloudflare.com/client/v4/zones/$CLOUDFLARE_ZONE_ID/purge_cache"
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/word-scramble.yml'
+      - 'packages/word-scramble/**/*'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/word-scramble.yml'
+      - 'packages/word-scramble/**/*'
