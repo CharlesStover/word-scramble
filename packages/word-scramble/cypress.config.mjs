@@ -1,6 +1,6 @@
 export default {
   fixturesFolder: false,
-  projectId: '4akrvv',
+  projectId: 'iy4bpc',
   redirectionLimit: 2,
   e2e: {
     baseUrl: 'http://localhost:3000/',
