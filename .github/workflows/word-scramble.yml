@@ -213,7 +213,8 @@ jobs:
   github-pages:
     name: GitHub Pages
     if: ${{ github.event_name == 'push' }}
-    needs: [build, coverage, cypress, eslint, jest]
+    # Add `coverage` when Cypress 10 supports coverage reporting.
+    needs: [build, cypress, eslint, jest]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -234,7 +235,8 @@ jobs:
   sentry-release:
     name: Sentry release
     if: ${{ github.event_name == 'push' }}
-    needs: [build, coverage, cypress, eslint, jest]
+    # Add `coverage` when Cypress 10 supports coverage reporting.
+    needs: [build, cypress, eslint, jest]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -256,29 +258,6 @@ jobs:
           sourcemaps: packages/word-scramble/build
           url_prefix: ~/
           version: ${{ github.sha }}
-
-  # cloudflare-purge:
-  #   name: Cloudflare purge
-  #   if: ${{ github.event_name == 'push' }}
-  #   needs: github-pages
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Purge Cloudflare cache
-  #       env:
-  #         CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-  #         CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
-  #       run: >
-  #         curl \
-  #           --data '{
-  #             "files": [
-  #               "https://charlesstover.com",
-  #               "https://charlesstover.com/index.html"
-  #             ]
-  #           }' \
-  #           --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-  #           --header "Content-Type:application/json" \
-  #           --request POST \
-  #           "https://api.cloudflare.com/client/v4/zones/$CLOUDFLARE_ZONE_ID/purge_cache"
 
 on:
   pull_request:
