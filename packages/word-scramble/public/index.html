@@ -1,9 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>Application</title>
+    <title>Word Scramble</title>
     <link rel="icon" type="image/x-icon" href="%PUBLIC_URL%/favicon.ico" />
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Oleo+Script+Swash+Caps&display=swap"
+    />
     <meta charset="utf-8" />
     <meta name="color-scheme" content="dark" />
     <meta name="msapplication-navbutton-color" content="#161616" />
@@ -20,7 +26,26 @@
     </script>
     <style type="text/css">
       body {
-        background-color: #80c0f0;
+        background-color: #204080;
+        height: 100%;
+        margin: 0;
+        max-height: 100%;
+        min-height: 100%;
+        padding: 0;
+      }
+
+      html {
+        height: 100%;
+        max-height: 100%;
+        min-height: 100%;
+        overflow: auto;
+      }
+
+      #root {
+        display: flex;
+        height: 100%;
+        max-height: 100%;
+        min-height: 100%;
       }
     </style>
   </head>

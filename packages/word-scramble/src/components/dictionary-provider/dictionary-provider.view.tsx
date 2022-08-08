@@ -30,7 +30,6 @@ export default function DictionaryProvider({
     import('../../constants/dictionary.json')
       .then(({ default: response }: Json): void => {
         if (!Array.isArray(response)) {
-          console.log(response);
           throw new Error(
             `Expected the dictionary to be an array, but received: ${typeof response}`,
           );

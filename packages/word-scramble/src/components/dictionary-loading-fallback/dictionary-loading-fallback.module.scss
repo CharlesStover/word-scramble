@@ -1,0 +1,95 @@
+@keyframes letter {
+  0% {
+    transform: translateY(0);
+  }
+  33% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-0.5em);
+  }
+  67% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes phrase {
+  0% {
+    transform: rotate(0);
+  }
+
+  10% {
+    transform: rotate(-2deg);
+  }
+
+  30% {
+    transform: rotate(2deg);
+  }
+
+  40% {
+    transform: rotate(0);
+  }
+
+  50% {
+    transform: rotate(-2deg);
+  }
+
+  53% {
+    transform: rotate(2deg);
+  }
+
+  57% {
+    transform: rotate(-2deg);
+  }
+
+  60% {
+    transform: rotate(2deg);
+  }
+
+  70% {
+    transform: rotate(0);
+  }
+
+  80% {
+    transform: rotate(-2deg);
+  }
+
+  90% {
+    transform: rotate(2deg);
+  }
+
+  100% {
+    transform: rotate(0);
+  }
+}
+
+.root {
+  align-items: center;
+  display: flex;
+  flex-grow: 1;
+  font-family: 'Oleo Script Swash Caps', cursive;
+  font-size: 3rem;
+  justify-content: center;
+  letter-spacing: 1px;
+  text-align: center;
+  width: 100%;
+}
+
+.letter {
+  animation-duration: 2s;
+  animation-iteration-count: infinite;
+  animation-name: letter;
+  animation-timing-function: ease-in-out;
+}
+
+.phrase {
+  animation-delay: 0s;
+  animation-duration: 3s;
+  animation-iteration-count: infinite;
+  animation-name: phrase;
+  animation-timing-function: linear;
+  display: flex;
+}
