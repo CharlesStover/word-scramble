@@ -1,6 +1,6 @@
 /// <reference types="cypress" />
 
-describe('Home', (): void => {
+describe('Game', (): void => {
   it('should display "Hello world"', (): void => {
     cy.visit('/');
     cy.contains('p', 'Hello world');
